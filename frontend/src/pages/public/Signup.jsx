@@ -1,33 +1,130 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
     try {
-      await api.post('/auth/signup', { name, email, password });
-      alert('Signup successful! Please check your email.');
+      await api.post('/auth/signup', form);
+      setSuccess(true);
     } catch (err) {
-      alert('Signup failed');
+      const msg = err.response?.data?.message || '';
+      if (err.response?.status === 409) {
+        setError('This email is already registered. Try logging in instead.');
+      } else {
+        setError(msg || 'Signup failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-xl mb-4">
+              <span className="text-green-600 text-2xl">✓</span>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email!</h2>
+            <p className="text-gray-500 mb-6">
+              We've sent a verification link to <strong>{form.email}</strong>.
+              Click the link in the email to activate your account.
+            </p>
+            <Link to="/login" className="block w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition text-center">
+              Back to Login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded shadow">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">Create an account</h2>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <input type="text" required className="w-full px-3 py-2 border rounded" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
-          <input type="email" required className="w-full px-3 py-2 border rounded" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} />
-          <input type="password" required className="w-full px-3 py-2 border rounded" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-          <button type="submit" className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Sign up</button>
-        </form>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4">
+              <span className="text-white font-bold text-2xl">$</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+            <p className="text-gray-500 mt-1">Start tracking your expenses today</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                required
+                value={form.name}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                name="email"
+                required
+                value={form.email}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                type="password"
+                name="password"
+                required
+                minLength={8}
+                value={form.password}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                placeholder="Min. 8 characters"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition disabled:opacity-60"
+            >
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Already have an account?{' '}
+            <Link to="/login" className="text-indigo-600 font-medium hover:underline">Sign in</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 };
+
 export default Signup;
