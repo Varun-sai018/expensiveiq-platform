@@ -1,4 +1,4 @@
-package com.expenseiq.backend;
+package com.expenseiq;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
