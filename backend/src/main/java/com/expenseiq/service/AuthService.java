@@ -1,4 +1,5 @@
 package com.expenseiq.service;
+
 import com.expenseiq.dto.AuthRequest;
 import com.expenseiq.dto.AuthResponse;
 import com.expenseiq.dto.SignupRequest;
@@ -7,10 +8,12 @@ import com.expenseiq.model.User;
 import com.expenseiq.repository.UserRepository;
 import com.expenseiq.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,25 +26,37 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
+    // When true, users are auto-verified on signup (no email needed)
+    // Set to false in production once a real mail server is configured
+    @Value("${app.skip-email-verification:true}")
+    private boolean skipEmailVerification;
+
     public void signup(SignupRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("EMAIL_EXISTS");
         }
+
         String verificationToken = UUID.randomUUID().toString();
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
-                .isVerified(false)
-                .verificationToken(verificationToken)
+                // Auto-verify if no email server configured; require verification otherwise
+                .isVerified(skipEmailVerification)
+                .verificationToken(skipEmailVerification ? null : verificationToken)
                 .build();
         userRepository.save(user);
 
-        String verifyUrl = "http://localhost:5173/verify-email?token=" + verificationToken;
-        System.out.println("LOCAL DEV — Verification URL: " + verifyUrl);
-        emailService.sendEmail(user.getEmail(), "Verify your ExpenseIQ account",
-                "Click to verify: " + verifyUrl);
+        if (skipEmailVerification) {
+            System.out.println("LOCAL DEV — Email verification SKIPPED. User '" + request.getEmail() + "' is auto-verified and can login immediately.");
+        } else {
+            String verifyUrl = "http://localhost:5173/verify-email?token=" + verificationToken;
+            System.out.println("LOCAL DEV — Verification URL: " + verifyUrl);
+            emailService.sendEmail(user.getEmail(), "Verify your ExpenseIQ account",
+                    "Click to verify: " + verifyUrl);
+        }
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -58,12 +73,11 @@ public class AuthService {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid or already used token"));
         user.setVerified(true);
-        user.setVerificationToken(null); // Clear token after use
+        user.setVerificationToken(null);
         userRepository.save(user);
     }
 
     public void forgotPassword(String email) {
-        // Always return success — don't reveal if email exists
         userRepository.findByEmail(email).ifPresent(user -> {
             String resetToken = UUID.randomUUID().toString();
             user.setResetToken(resetToken);

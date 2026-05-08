@@ -38,13 +38,12 @@ const Signup = () => {
             <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-xl mb-4">
               <span className="text-green-600 text-2xl">✓</span>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Account created!</h2>
             <p className="text-gray-500 mb-6">
-              We've sent a verification link to <strong>{form.email}</strong>.
-              Click the link in the email to activate your account.
+              Your account is ready. You can sign in now.
             </p>
             <Link to="/login" className="block w-full py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition text-center">
-              Back to Login
+              Go to Login
             </Link>
           </div>
         </div>
