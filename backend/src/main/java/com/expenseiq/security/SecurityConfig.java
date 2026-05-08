@@ -61,7 +61,8 @@ public class SecurityConfig {
         // Allow both Vite dev server (5173) and standard React dev server (3000)
         configuration.setAllowedOrigins(List.of(
             "http://localhost:3000",
-            "http://localhost:5173"
+            "http://localhost:5173",
+            "http://localhost:5174"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
